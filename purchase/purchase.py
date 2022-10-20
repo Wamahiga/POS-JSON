@@ -2,45 +2,41 @@ from email.message import EmailMessage
 import ssl
 import smtplib
 import json
+from main import main_menu
+cart_file = "purchase/cart.json"
 prod_file = "Product/prod.json"
-cus_file = "Customer/cus.json"
+cus_file = "Customer/customer.json"
 
 
-def p_order():
+def purchase_operation():
     while True:
         print("""
-        ----------------------------------------------
-        Purchase Sub-Menu:-
-
-        1) Purchase products
-        2) List purchases
-        3) Back to Main Menu
-
-        ----------------------------------------------
+        ***** Purchase menu *****
+        [1].MAKE PURCHASE
+        [2].VIEW ALL PURCHASES
+        [0].MAIN MENU
+        
         """)
-        choice = input('Enter a Menu option to continue:')
+        option = input('Input an option to proceed:')
 
-        if choice == "1":
+        if option == "1":
 
-            process_order()
+            make_purchase()
 
-        elif choice == "2":
+        elif option == "2":
 
             completed_orders()
 
-        elif choice == "3":
-            from main import main_menu
-
+        elif option == "0":
             main_menu()
         else:
-            print('\nINVALID MENU OPTION! Enter 1-3')
+            print('\nINVALID MENU OPTION!')
 
 
-def process_order():
+def make_purchase():
     fin_order = {}
-    with open("Order/cart.json", "r") as json_file:
+    with open("purchase/cart.json", "r") as json_file:
         order_temp = json.load(json_file)
-    # checks if cart is empty
     if not order_temp:
         from Customer.customer import view_customer
         view_customer()
@@ -49,12 +45,12 @@ def process_order():
             data_lent = len(cus_temp)
             while True:
                 try:
-                    cust_id = int(input(f"\nEnter Customer ID(1-{data_lent}) of the buyer:\n"))
+                    cust_id = int(input(f"\nEnter Customer ID of the customer:\n"))
                 except ValueError:
-                    print(f"\nINVALID INPUT! Selection can't be an Alphabet")
+                    print(f"\nINVALID INPUT!")
                     continue
                 if cust_id > data_lent:
-                    print("CUSTOMER DOES NOT EXIST! Enter VALID Customer ID!")
+                    print("CUSTOMER NOT FOUND!")
                     continue
                 else:
                     break
@@ -76,9 +72,8 @@ def process_order():
             prod_temp = json.load(json_file)
         data_length = len(prod_temp)
 
-        with open("Order/cart.json", "r") as json_file:
+        with open("purchase/cart.json", "r") as json_file:
             cart_temp = json.load(json_file)
-        # ERROR HANDLING EXPECTED
         opt = int(input(f"\nEnter Product ID(1 - {data_length}) of item you wish to add to cart:"))
         i = 1
         for entry in prod_temp:
@@ -95,17 +90,17 @@ def process_order():
                 price_tint = float(fin_order[prod_id]["Product_Price"])
                 subtt = price_tint * fin_order[prod_id]["Product_Quantity"]
                 fin_order[prod_id]["Sub-Total"] = '{:.2f}'.format(subtt)
-                # insert/adds contents of selected_prod inside cart_temp
                 cart_temp.append(fin_order)
                 i = i + 1
 
             else:
                 pass
                 i = i + 1
-        with open("Order/cart.json", "w") as json_file:
+        with open("purchase/cart.json", "w") as json_file:
             json.dump(cart_temp, json_file, indent=4)
-            print("\nProduct Added to cart!")
-    # knows the cart has values/not empty ~ adding extra products in the prod dict and assigns IDs
+            print("\nITEM AADED TO CART!")
+
+    #checkout
     else:
         from Product.product import view_product
         view_product()
@@ -113,13 +108,10 @@ def process_order():
             prod_temp = json.load(json_file)
         data_length = len(prod_temp)
 
-        with open("Order/cart.json", "r") as json_file:
+        with open("purchase/cart.json", "r") as json_file:
             cart_temp = json.load(json_file)
-            # [cart_list] = cart_temp
-            # result = cart_list.strip("[]{}")
 
-        # ERROR HANDLING EXPECTED
-        opt = int(input(f"\nEnter Product ID(1 - {data_length}) of item you wish to add to cart:"))
+        opt = int(input(f"\nEnter Product ID of item to purchase:"))
         i = 1
         for entry in prod_temp:
 
@@ -135,11 +127,7 @@ def process_order():
                 price_tint = float(fin_order[prod_id]["Product_Price"])
                 subtt = price_tint * fin_order[prod_id]["Product_Quantity"]
                 fin_order[prod_id]["Sub-Total"] = '{:.2f}'.format(subtt)
-                # Append - insert/adds contents of fin_order inside open_cart_temp
-                # removes the list/ leaves the dictionary inside for update/
-                # Update adds something extra in an already existing dictionary
                 [open_cart_temp] = cart_temp
-                # prod_list.append(opt)
                 open_cart_temp.update(fin_order)
 
                 i = i + 1
@@ -147,17 +135,17 @@ def process_order():
             else:
                 pass
                 i = i + 1
-        with open("Order/cart.json", "w") as json_file:
+        with open("purchase/cart.json", "w") as json_file:
             json.dump(cart_temp, json_file, indent=4)
             print("\nProduct Added to cart!")
 
     while True:
-        cont_shopping = int(input("\nPress 1 to continue shopping and 2 to complete purchase:"))
+        cont_shopping = int(input("\nPress 1 to continue shopping and 2 to checkout:"))
         if cont_shopping == 1:
-            process_order()
+            make_purchase()
         elif cont_shopping == 2:
-            # calculating total from subtotal
-            with open("Order/cart.json", "r") as json_file:
+            # calculating total
+            with open("purchase/cart.json", "r") as json_file:
                 checkout_temp = json.load(json_file)
             emp_prd = {}
             [opened_checkout_temp] = checkout_temp
@@ -174,18 +162,16 @@ def process_order():
             emp_prd[new_id] = "{:.2f}".format(total)
             opened_checkout_temp.update(emp_prd)
 
-            with open("Order/cart.json", "w") as json_file:
+            with open("purchase/cart.json", "w") as json_file:
                 json.dump(checkout_temp, json_file, indent=4)
         break
 
-    # printing a receipt
-    with open("Order/cart.json", "r") as json_file:
+    # receipt
+    with open("purchase/cart.json", "r") as json_file:
         fin_temp = json.load(json_file)
     [strip_fin_temp] = fin_temp
-
-    print("\n----------------------------------------------")
-    print("-------------------RECEIPT--------------------")
-    print("----------------------------------------------")
+    
+    print("**************RECEIPT***************")
     for i in strip_fin_temp:
         if i == "Customer Name":
             print(f"\nCustomer Name: {strip_fin_temp[i]}")
@@ -199,13 +185,11 @@ def process_order():
             print(f"Product Price: Ksh. {strip_fin_temp[i]['Product_Price']}")
             print(f"Sub-Total: Ksh. {strip_fin_temp[i]['Sub-Total']}")
 
-    print("\n----------------------------------------------")
     print("-------Thank you for Shopping with us---------")
-    print("----------------------------------------------")
 
     send_mail()
-    # product quantity decrement
-    with open("Order/cart.json", "r") as json_file:
+    # inventory decreament after purcgase
+    with open("purchase/cart.json", "r") as json_file:
         pid_temp = json.load(json_file)
     [open_pid] = pid_temp
     for i in open_pid:
@@ -239,10 +223,10 @@ def process_order():
                 json.dump(up_qty_list, json_file, indent=4)
 
     # generating a purchase list
-    with open("Order/cart.json", "r") as json_file:
+    with open("purchase/cart.json", "r") as json_file:
         c_temp = json.load(json_file)
     [strip_c_temp] = c_temp
-    with open("Order/order.json", "r") as json_file:
+    with open("purchase/purchase.json", "r") as json_file:
         o_temp = json.load(json_file)
 
     pur_combo = {}
@@ -254,29 +238,26 @@ def process_order():
         [open_o_temp] = o_temp
         open_o_temp.update(pur_combo)
 
-    with open("Order/order.json", "w") as json_file:
+    with open("purchase/purchase.json", "w") as json_file:
         json.dump(o_temp, json_file, indent=4)
         print("\nOrder record captured!")
     # emptying the cart
     cart = []
-    with open("Order/cart.json", "w") as json_file:
+    with open("purchase/cart.json", "w") as json_file:
         json.dump(cart, json_file, indent=4)
 
-    p_order()
+    purchase_operation()
 
 
 def create_prod_id():
-    with open("Order/cart.json", "r") as json_file:
+    with open("purchase/cart.json", "r") as json_file:
         gen_temp = json.load(json_file)
     if not gen_temp:
         new_id = "Prod1"
         return new_id
     else:
-        # Removing the list so that keys in dictionary elements can be read/accessed
         [open_gen_temp] = gen_temp
-        # [-1] begins the  list from bottom [1] begins the list from above
         prev_id = list(open_gen_temp)[-1]
-        # takes the length of the character from left to right
         length = len(prev_id)
         num = int(prev_id[4:length]) + 1
         new_id = "Prod" + str(num)
@@ -284,7 +265,7 @@ def create_prod_id():
 
 
 def create_pur_id():
-    with open("Order/order.json", "r") as json_file:
+    with open("purchase/purchase.json", "r") as json_file:
         od_temp = json.load(json_file)
     if not od_temp:
         new_id = "Ord1"
@@ -298,13 +279,13 @@ def create_pur_id():
         return new_id
 
 
-# Generating a purchase list
+
 def completed_orders():
-    with open("Order/order.json", "r") as json_file:
+    with open("purchase/purchase.json", "r") as json_file:
         o_temp = json.load(json_file)
     [strip_o_temp] = o_temp
 
-    print("\n------------------------------- Processed Orders -----------------------------------\n")
+    print("\n************RECENT PURCHASES*****************\n")
 
     for i in strip_o_temp:
         print(f"Order: {i}")
@@ -322,24 +303,23 @@ def completed_orders():
                 print(f"Product Name: {p_name}, Product Price: {p_price}, "
                       f"Product Quantity: {p_qty}, Sub-Total: Ksh. {strip_o_temp[i][j]['Sub-Total']}")
 
-    print("-----------------------------------------------------------------------------------------")
+    print("/n/n")
 
 
 def send_mail():
 
-    with open("Order/cart.json", "r") as json_file:
+    with open("purchase/cart.json", "r") as json_file:
         fin_temp = json.load(json_file)
     [strip_fin_temp] = fin_temp
 
-    email_sender = 'allprojects53@gmail.com'
-    email_pass = 'nqtytjavpktcqzin'
+    email_sender = 'wamahigadev@gmail.com'
+    email_pass = "ydupfucuckvvkjpf"
     email_receiver = ''
 
-    subject = "PURCHASE RECEIPT"
+    subject = "MAMA MBOGA GROCERIES"
 
-    body = "\n----------------------------------------------"
-    body += "-------------------RECEIPT--------------------"
-    body += "----------------------------------------------"
+    body = "\n"
+    body += "***********PURCHASE RECEIPT**************"
     body += "\n"
 
     for i in strip_fin_temp:
@@ -350,14 +330,13 @@ def send_mail():
         elif i == "Email":
             email_receiver = {strip_fin_temp[i]}
         else:
-            body += f"\nProduct Name: {strip_fin_temp[i]['Product_Name']}"
-            body += f"\nProduct Quantity: {strip_fin_temp[i]['Product_Quantity']}"
-            body += f"\nProduct Price: Ksh. {strip_fin_temp[i]['Product_Price']}"
-            body += f"\nSub-Total: Ksh. {strip_fin_temp[i]['Sub-Total']}"
+            body += f"\n\nItem: {strip_fin_temp[i]['Product_Name']}"
+            body += f"\nQty: {strip_fin_temp[i]['Product_Quantity']}"
+            body += f"\nPrice: Ksh. {strip_fin_temp[i]['Product_Price']}"
+            body += f"\nTotal: Ksh. {strip_fin_temp[i]['Sub-Total']}"
             body += "\n"
-    body += "\n----------------------------------------------"
-    body += "-------Thank you for Shopping with us---------"
-    body += "----------------------------------------------"
+    
+    body += "\n\n******THANKYOU FOR SHOPPING WITH US******"
 
     em = EmailMessage()
     em['From'] = email_sender
@@ -372,4 +351,4 @@ def send_mail():
         smtp.sendmail(email_sender, email_receiver, em.as_string())
 
 
-# p_order()
+
